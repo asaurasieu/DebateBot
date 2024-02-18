@@ -10,7 +10,7 @@ from langchain_openai import OpenAIEmbeddings
 load_dotenv('.env')
 
 # load the document as before
-loader = PyPDFLoader('./docs/RachelGreenCV.pdf')
+loader = PyPDFLoader('./docs/Ukraine_text.txt')
 documents = loader.load()
 
 # we split the data into chunks of 1,000 characters, with an overlap
@@ -40,5 +40,5 @@ qa_chain = RetrievalQA.from_chain_type(
 )
 
 # we can now exectute queries againse our Q&A chain
-result = qa_chain.invoke({'query': 'Who is the CV about?'})
+result = qa_chain.invoke({'query': 'What is the text about?'})
 print(result['result'])
