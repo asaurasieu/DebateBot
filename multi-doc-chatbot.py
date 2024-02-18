@@ -3,40 +3,46 @@ import sys
 from dotenv import load_dotenv
 from langchain.chains import ConversationalRetrievalChain
 from langchain.text_splitter import CharacterTextSplitter
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_community.document_loaders import Docx2txtLoader
 from langchain_community.document_loaders import TextLoader
 from langchain_community.vectorstores import Chroma
-from langchain_openai import ChatOpenAI
-from langchain_openai import OpenAIEmbeddings
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 
 load_dotenv('.env')
 
-documents = []
-# Create a List of Documents from all of our files in the ./docs folder
-for file in os.listdir("docs"):
-    if file.endswith(".pdf"):
-        pdf_path = "./docs/" + file
-        loader = PyPDFLoader(pdf_path)
-        documents.extend(loader.load())
-    elif file.endswith('.docx') or file.endswith('.doc'):
-        doc_path = "./docs/" + file
-        loader = Docx2txtLoader(doc_path)
-        documents.extend(loader.load())
-    elif file.endswith('.txt'):
-        text_path = "./docs/" + file
-        loader = TextLoader(text_path)
-        documents.extend(loader.load())
+def list_txt_documents(directory):
+    """List all .txt documents in the specified directory."""
+    return [file for file in os.listdir(directory) if file.endswith('.txt')]
 
-# Split the documents into smaller chunks
-text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=10)
-documents = text_splitter.split_documents(documents)
+def select_document(docs):
+    """Ask the user to select a document and return the selected document's name."""
+    for idx, doc in enumerate(docs, start=1):
+        print(f"{idx}. {doc}")
+    selection = int(input("Select a document by number: ")) - 1
+    return docs[selection]
 
-# Convert the document chunks to embedding and save them to the vector store
-vectordb = Chroma.from_documents(documents, embedding=OpenAIEmbeddings(), persist_directory="./data")
+def load_and_process_document(file_path):
+    """Load and process the selected .txt document."""
+    loader = TextLoader(file_path)
+    documents = loader.load()
+    text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=10)
+    return text_splitter.split_documents(documents)
+
+# Directory where documents are stored
+docs_folder = "./docs"
+
+# Step 1: List and allow the user to select a .txt document
+available_docs = list_txt_documents(docs_folder)
+selected_doc = select_document(available_docs)
+selected_doc_path = os.path.join(docs_folder, selected_doc)
+
+# Step 2: Load and process the selected document
+document_chunks = load_and_process_document(selected_doc_path)
+
+# Step 3: Initialize the vector store with embeddings from the selected document
+vectordb = Chroma.from_documents(document_chunks, embedding=OpenAIEmbeddings(), persist_directory="./data")
 vectordb.persist()
 
-# create our Q&A chain
+# Initialize the conversational Q&A chain with the vector store
 pdf_qa = ConversationalRetrievalChain.from_llm(
     ChatOpenAI(temperature=0.7, model_name='gpt-3.5-turbo', max_tokens=4000),
     retriever=vectordb.as_retriever(search_kwargs={'k': 6}),
@@ -44,23 +50,26 @@ pdf_qa = ConversationalRetrievalChain.from_llm(
     verbose=False
 )
 
+# UI setup
 yellow = "\033[0;33m"
 green = "\033[0;32m"
 white = "\033[0;39m"
-
 chat_history = []
+
 print(f"{yellow}---------------------------------------------------------------------------------")
-print('Welcome to the DocBot. You are now ready to start interacting with your documents')
+print(f"Welcome to the Document Interaction Bot. Ready to interact with: {selected_doc}")
 print('---------------------------------------------------------------------------------')
+
+# Interaction loop
 while True:
     query = input(f"{green}Prompt: ")
-    if query == "exit" or query == "quit" or query == "q" or query == "f":
+    if query.lower() in ["exit", "quit", "q", "f"]:
         print('Exiting')
-        sys.exit()
+        break
     if query == '':
         continue
-    result = pdf_qa.invoke(
-        {"question": query, "chat_history": chat_history})
+    
+    # Generate answer based on the selected document
+    result = pdf_qa.invoke({"question": query, "chat_history": chat_history})
     print(f"{white}Answer: " + result["answer"])
     chat_history.append((query, result["answer"]))
-    
