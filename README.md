@@ -1,1 +1,1 @@
-# DebateBotMultiDoc
+# DebateBot
