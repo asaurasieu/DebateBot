@@ -38,7 +38,7 @@ vectordb.persist()
 
 # create our Q&A chain
 pdf_qa = ConversationalRetrievalChain.from_llm(
-    ChatOpenAI(temperature=0.7, model_name='gpt-3.5-turbo', max_tokens=50000),
+    ChatOpenAI(temperature=0.7, model_name='gpt-3.5-turbo', max_tokens=4000),
     retriever=vectordb.as_retriever(search_kwargs={'k': 6}),
     return_source_documents=True,
     verbose=False
@@ -63,3 +63,4 @@ while True:
         {"question": query, "chat_history": chat_history})
     print(f"{white}Answer: " + result["answer"])
     chat_history.append((query, result["answer"]))
+    
