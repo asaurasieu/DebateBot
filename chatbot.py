@@ -44,7 +44,7 @@ vectordb.persist()
 
 # Initialize the conversational Q&A chain with the vector store
 pdf_qa = ConversationalRetrievalChain.from_llm(
-    ChatOpenAI(temperature=0.7, model_name='gpt-3.5-turbo', max_tokens=4000),
+    ChatOpenAI(temperature=0.7, model_name='ft:davinci-002:personal::8tkkx6hh', max_tokens=4000),
     retriever=vectordb.as_retriever(search_kwargs={'k': 6}),
     return_source_documents=True,
     verbose=False
@@ -57,7 +57,7 @@ white = "\033[0;39m"
 chat_history = []
 
 print(f"{yellow}---------------------------------------------------------------------------------")
-print(f"Welcome to the Debate Bot. Ready to interact with: {selected_doc}")
+print(f"Welcome to the Document Interaction Bot. Ready to interact with: {selected_doc}")
 print('---------------------------------------------------------------------------------')
 
 # Interaction loop
