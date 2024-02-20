@@ -18,7 +18,8 @@ def list_hf_repository_files(repo_id):
     """List all files in a specified Hugging Face Hub repository."""
     api = HfApi()
     folder = HfFolder()
-    folder.save_token("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")
+    access_token = os.getenv('ACCESS_TOKEN')
+    folder.save_token(access_token)
     available_docs = api.list_repo_files(repo_id)
     return available_docs
 
